@@ -29,8 +29,8 @@ contract SwapScript is BaseScript {
             zeroForOne: true,
             poolKey: poolKey,
             hookData: hookData,
-            receiver: address(this),
-            deadline: block.timestamp + 30
+            receiver: getDeployer(),
+            deadline: block.timestamp + 3600
         });
 
         vm.stopBroadcast();

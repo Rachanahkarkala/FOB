@@ -22,32 +22,56 @@ contract BaseScript is Script, Deployers {
     /////////////////////////////////////
     // --- Configure These ---
     /////////////////////////////////////
-    IERC20 internal constant token0 = IERC20(0x0165878A594ca255338adfa4d48449f69242Eb8F);
-    IERC20 internal constant token1 = IERC20(0xa513E6E4b8f2a923D98304ec87F64353C4D5C853);
-    IHooks constant hookContract = IHooks(address(0));
+    IERC20 internal constant token0 =
+        IERC20(0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9);
+
+    IERC20 internal constant token1 =
+        IERC20(0x5FC8d32690cc91D4c39d9d3abcBD16989F875707);
+    IHooks constant hookContract =
+    IHooks(0xd3019d7fCB25D820E9d0c34FF3e007AB64bC8aC0);
     /////////////////////////////////////
 
     Currency immutable currency0;
     Currency immutable currency1;
 
+    
     constructor() {
-        // Make sure artifacts are available, either deploy or configure.
+        if (block.chainid == 31337) {
+        // Reuse the V4 infrastructure already deployed on Anvil.
+        permit2 = IPermit2(
+            0x000000000022D473030F116dDEE9F6B43aC78BA3
+        );
+
+        poolManager = IPoolManager(
+            0x0D9BAf34817Fccd3b3068768E5d20542B66424A5
+        );
+
+        positionManager = IPositionManager(
+            0x90aAE8e3C8dF1d226431D0C2C7feAaa775fAF86C
+        );
+
+        swapRouter = IUniswapV4Router04(
+            payable(0xB61598fa7E856D43384A8fcBBAbF2Aa6aa044FfC)
+        );
+    } else {
         deployArtifacts();
-
-        deployerAddress = getDeployer();
-
-        (currency0, currency1) = getCurrencies();
-
-        vm.label(address(permit2), "Permit2");
-        vm.label(address(poolManager), "V4PoolManager");
-        vm.label(address(positionManager), "V4PositionManager");
-        vm.label(address(swapRouter), "V4SwapRouter");
-
-        vm.label(address(token0), "Currency0");
-        vm.label(address(token1), "Currency1");
-
-        vm.label(address(hookContract), "HookContract");
     }
+
+    deployerAddress = getDeployer();
+
+    (currency0, currency1) = getCurrencies();
+
+    vm.label(address(permit2), "Permit2");
+    vm.label(address(poolManager), "V4PoolManager");
+    vm.label(address(positionManager), "V4PositionManager");
+    vm.label(address(swapRouter), "V4SwapRouter");
+
+    vm.label(address(token0), "Currency0");
+    vm.label(address(token1), "Currency1");
+
+    vm.label(address(hookContract), "HookContract");
+}
+
 
     function _etch(address target, bytes memory bytecode) internal override {
         if (block.chainid == 31337) {
