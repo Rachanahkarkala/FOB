@@ -1,0 +1,27 @@
+.kyc-workspace { display: grid; gap: 18px; margin: 0 0 30px; }
+.kyc-record-panel, .kyc-admin-panel, .kyc-history-panel, .kyc-error-panel { min-width: 0; }
+.kyc-reason, .kyc-ai-output { margin-top: 16px; padding: 14px; border: 1px solid #393248; border-radius: 12px; background: #13111b; }
+.kyc-reason p, .kyc-ai-output p { margin: 9px 0 0; color: #d8d2e5; font-size: 12px; line-height: 1.75; white-space: pre-wrap; overflow-wrap: anywhere; }
+.kyc-ai-button { margin-top: 16px; }
+.kyc-field-label { display: block; margin: 14px 0 8px; color: #aaa3b7; font-size: 11px; }
+.kyc-field { width: 100%; box-sizing: border-box; padding: 13px 14px; border: 1px solid #393443; border-radius: 11px; background: #0e0e15; color: #f7f4ff; font: 12px 'DM Mono', monospace; outline: none; }
+.kyc-field:focus { border-color: #9470e7; }
+.kyc-textarea { min-height: 94px; resize: vertical; font-family: inherit; line-height: 1.6; }
+.kyc-char-count { margin-top: 6px; text-align: right; color: #817c8b; font-size: 10px; }
+.kyc-action-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-top: 15px; }
+.kyc-action-grid button, .kyc-secondary-button, .kyc-danger-button { padding: 12px 13px; border-radius: 11px; border: 1px solid #594675; background: #292038; color: #eee7ff; font-size: 11px; font-weight: 700; cursor: pointer; }
+.kyc-action-grid .primary-button { padding: 12px 13px; }
+.kyc-secondary-button { background: #211d32; border-color: #51416d; }
+.kyc-danger-button { background: #351e25; border-color: #71404c; color: #ffb7c0; }
+.kyc-action-grid button:disabled, .kyc-secondary-button:disabled, .kyc-danger-button:disabled { opacity: .45; cursor: not-allowed; }
+.kyc-target-status { margin-top: 13px; color: #aaa3b7; font-size: 11px; }
+.kyc-target-status strong { color: #eee7ff; }
+.kyc-history-list { display: grid; gap: 0; }
+.kyc-history-item { display: flex; justify-content: space-between; gap: 14px; padding: 14px 0; border-top: 1px solid #2d2a36; }
+.kyc-history-item strong, .kyc-history-item small { display: block; }
+.kyc-history-item strong { font-size: 12px; }
+.kyc-history-item small { margin-top: 5px; color: #8e899a; font-size: 10px; }
+.kyc-history-item p { margin: 8px 0 0; color: #b9b2c6; font-size: 11px; line-height: 1.6; }
+.kyc-history-item a { flex-shrink: 0; color: #c6adff; font-size: 10px; text-decoration: none; }
+.kyc-error-panel .kyc-secondary-button { margin-top: 12px; }
+@media (max-width: 650px) { .kyc-action-grid { grid-template-columns: 1fr; } .kyc-history-item { flex-direction: column; } }

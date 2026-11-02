@@ -10,8 +10,7 @@ import {IPoolManager} from "@uniswap/v4-core/src/interfaces/IPoolManager.sol";
 import {PoolKey} from "@uniswap/v4-core/src/types/PoolKey.sol";
 import {SwapParams} from "@uniswap/v4-core/src/types/PoolOperation.sol";
 import {
-    BeforeSwapDelta,
-    BeforeSwapDeltaLibrary
+    BeforeSwapDelta
 } from "@uniswap/v4-core/src/types/BeforeSwapDelta.sol";
 
 import {LPFeeLibrary} from "@uniswap/v4-core/src/libraries/LPFeeLibrary.sol";
@@ -21,7 +20,6 @@ import {PoolId, PoolIdLibrary} from "@uniswap/v4-core/src/types/PoolId.sol";
 import {Currency} from "@uniswap/v4-core/src/types/Currency.sol";
 
 import {IUniswapV4Router04} from "hookmate/interfaces/router/IUniswapV4Router04.sol";
-
 import {IUsdInrOracle} from "./MockUsdInrOracle.sol";
 
 interface IUsdInrAllowlist {
@@ -137,8 +135,12 @@ contract UsdInrDynamicHook is BaseOverrideFee {
             revert KYCNotApproved(wallet);
         }
 
-        (uint24 fee, uint256 poolPrice, uint256 oraclePrice, uint256 deviation) =
-            _calculateFee(key);
+        (
+            uint24 fee,
+            uint256 poolPrice,
+            uint256 oraclePrice,
+            uint256 deviation
+        ) = _calculateFee(key);
 
         emit SwapFeeApplied(
             wallet,
@@ -156,7 +158,7 @@ contract UsdInrDynamicHook is BaseOverrideFee {
         PoolKey calldata key,
         SwapParams calldata,
         bytes calldata
-    ) internal override returns (uint24) {
+    ) internal view override returns (uint24) {
         (uint24 fee,,,) = _calculateFee(key);
         return fee;
     }
@@ -170,18 +172,17 @@ contract UsdInrDynamicHook is BaseOverrideFee {
             uint256 oraclePriceWad,
             uint256 deviationBps
         )
-     
     {
         _validatePool(key);
 
         PoolId poolId = key.toId();
 
-        (uint160 sqrtPriceX96,,,) =
-            poolManager.getSlot0(poolId);
+        (uint160 sqrtPriceX96,,,) = poolManager.getSlot0(poolId);
 
         if (sqrtPriceX96 == 0) revert InvalidPool();
 
-        // Pool price is currency1 / currency0.
+        // Pool price = currency1 / currency0.
+        // Currency0 = USD, Currency1 = INR.
         // Both prototype tokens use 18 decimals.
         uint256 priceX96 = FullMath.mulDiv(
             uint256(sqrtPriceX96),
@@ -195,6 +196,7 @@ contract UsdInrDynamicHook is BaseOverrideFee {
             1 << 96
         );
 
+        // Read the real Chainlink INR/USD feed.
         (
             uint80 roundId,
             int256 answer,
@@ -211,6 +213,7 @@ contract UsdInrDynamicHook is BaseOverrideFee {
             revert InvalidOraclePrice();
         }
 
+        // Reject future or stale oracle data.
         if (
             updatedAt > block.timestamp ||
             block.timestamp - updatedAt > maxOracleAge
@@ -221,12 +224,23 @@ contract UsdInrDynamicHook is BaseOverrideFee {
         uint8 oracleDecimals = oracle.decimals();
 
         if (oracleDecimals > 18) {
-            oraclePriceWad =
-                uint256(answer) / (10 ** (oracleDecimals - 18));
-        } else {
-            oraclePriceWad =
-                uint256(answer) * (10 ** (18 - oracleDecimals));
+            revert InvalidOraclePrice();
         }
+
+        // First normalize Chainlink's INR/USD answer to 18 decimals.
+        // Example: 1053500 with 8 decimals = 0.010535 USD per INR.
+        uint256 usdPerInrWad = uint256(answer) *
+            (10 ** (18 - oracleDecimals));
+
+        if (usdPerInrWad == 0) revert InvalidOraclePrice();
+
+        // Invert INR/USD to get INR per USD.
+        // Example: 1 / 0.010535 = approximately 94.92.
+        oraclePriceWad = FullMath.mulDiv(
+            1e18,
+            1e18,
+            usdPerInrWad
+        );
 
         if (oraclePriceWad == 0) revert InvalidOraclePrice();
 
@@ -251,20 +265,21 @@ contract UsdInrDynamicHook is BaseOverrideFee {
 
         fee = uint24(calculatedFee);
     }
-       /// @notice Returns the current dynamic fee and pricing information.
-/// @dev Read-only function for the frontend. Does not execute a swap.
-function quoteFee(PoolKey calldata key)
-    external
-    view
-    returns (
-        uint24 fee,
-        uint256 poolPriceWad,
-        uint256 oraclePriceWad,
-        uint256 deviationBps
-    )
-{
-    return _calculateFee(key);
-}
+
+    /// @notice Returns the current dynamic fee and pricing information.
+    /// @dev Read-only function for the frontend.
+    function quoteFee(PoolKey calldata key)
+        external
+        view
+        returns (
+            uint24 fee,
+            uint256 poolPriceWad,
+            uint256 oraclePriceWad,
+            uint256 deviationBps
+        )
+    {
+        return _calculateFee(key);
+    }
 
     function _validatePool(PoolKey calldata key) internal view {
         if (
